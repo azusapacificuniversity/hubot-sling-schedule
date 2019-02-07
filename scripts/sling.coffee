@@ -1,10 +1,12 @@
 module.exports = (robot) ->
 
     robot.hear /who here/i, (res) ->
-        # get all user data from sling
         
+        output = "The following are currently on shift: \n\n"
+
+        # get all user data from sling
         robot.http("https://api.sling.is/v1/users")
-            .headers('Accept': 'application/json', 'Authorization': auth)
+            .headers('Accept': 'application/json', 'Authorization': authToken)
             .get() (err, response, body) ->
                 if err 
                     console.log(err)
@@ -20,7 +22,7 @@ module.exports = (robot) ->
                 now_formatted = now_formatted.replace(/:/g, '%3A')
                 
                 robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_formatted}")
-                    .headers('Accept': 'application/json', 'Authorization': auth)
+                    .headers('Accept': 'application/json', 'Authorization': authToken)
                     .get() (err, response, body) ->
                         if err 
                             console.log('something went wrong!!')
@@ -31,11 +33,14 @@ module.exports = (robot) ->
 
                         current_shifts = []
                         for shift in todays_shifts
-                            start_time = new Date(shift.dtstart)
-                            end_time = new Date(shift.dtend)
+                            # formatting strings to objects for easier comparisons
+                            shift.dtstart = new Date(shift.dtstart)
+                            shift.dtend = new Date(shift.dtend)
+
                             # if the shift is happening right now
-                            if now >= start_time && now < end_time
+                            if now >= shift.dtstart && now < shift.dtend
                                 current_shifts.push(shift)
+                        
                         console.log(current_shifts.length)
 
                         for shift in current_shifts
@@ -43,9 +48,12 @@ module.exports = (robot) ->
                             shift_owner = user_list.filter( (user) -> 
                                 return user.id == shift.user.id  
                             )
-                            # the filtering above returns a list, this is for formatting sake
+                            # the filtering above returns a list, this is for formatting sake :-)
                             shift_owner = shift_owner[0]
 
-                            console.log(shift_owner.name)
-                            
+                            summary = shift_owner.name.toString()  + " " + shift_owner.lastname.toString() + " – " + shift.summary.toString() + "\n"
+                            output += summary
+                            # console.log("is working from " + shift.dtstart.getHours() + ":" + shift.dtstart.getMinutes() + " to " + shift.dtend)
+
+                        res.send output
                             
