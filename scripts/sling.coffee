@@ -3,7 +3,7 @@ module.exports = (robot) ->
     robot.hear /who here/i, (res) ->
         
         output = "The following are currently on shift: \n\n"
-
+        
         # get all user data from sling
         robot.http("https://api.sling.is/v1/users")
             .headers('Accept': 'application/json', 'Authorization': authToken)
@@ -13,13 +13,10 @@ module.exports = (robot) ->
                     return
                 
                 user_list = JSON.parse body   # returns a list of dictionaries
-                console.log(user_list[0].name)
 
                 now = new Date
-                console.log("right now: " + now)
-                
-                now_formatted = now.toISOString()
-                now_formatted = now_formatted.replace(/:/g, '%3A')
+                now_formatted = now.toISOString().replace(/:/g, '%3A')
+                # now_formatted = now_formatted
                 
                 robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_formatted}")
                     .headers('Accept': 'application/json', 'Authorization': authToken)
@@ -40,8 +37,6 @@ module.exports = (robot) ->
                             # if the shift is happening right now
                             if now >= shift.dtstart && now < shift.dtend
                                 current_shifts.push(shift)
-                        
-                        console.log(current_shifts.length)
 
                         for shift in current_shifts
                             # filters through all users json and finds the shift owner details via user_id
