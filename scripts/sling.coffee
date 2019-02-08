@@ -12,11 +12,17 @@
 # Commands:
 #     hubot who's here - returns list of employees who are currently working with shift times and summary
 
-SLING_AUTH_TOKEN = process.env.SLING_AUTH_TOKEN
+SLING_AUTH_TOKEN = process.env.SLING_AUTH_TOKEN or false
 
 module.exports = (robot) ->
 
-    robot.hear /(who[']s here)/i, (res) ->        
+    robot.respond /(who[']s here)/i, (res) ->        
+
+        if SLING_AUTH_TOKEN == false
+            res.reply "Oops! Looks like you haven't set a Sling authentication token as an enviromental variable \n" +
+                       "More info on how to get an authentication token can be found here: https://api.sling.is/"
+            return
+
         output = "The following are currently on shift: \n\n"
         
         # get all user data from sling
@@ -80,4 +86,4 @@ module.exports = (robot) ->
                             summary += start_formatted.toString() + " – " + end_formatted.toString() + "\n\n"
                             output += summary
 
-                        res.send output
+                        res.reply output
