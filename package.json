@@ -1,9 +1,17 @@
 {
   "name": "hubot-sling-schedule",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "author": "mattaniaha <maytenfsu14@apu.edu>",
-  "description": "A bot to pull scheduling info from Sling",
+  "description": "Allows hubot to pull scheduling information from Sling",
+  "keywords": [
+    "hubot",
+    "sling"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/azusapacificuniversity/hubot-sling-schedule.git"
+  },
   "dependencies": {
     "hubot": "^3.2.0",
     "hubot-diagnostics": "^1.0.0",
