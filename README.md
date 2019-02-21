@@ -2,7 +2,7 @@
 
 Allows hubot to pull shift information from Sling and display who is currently working.
 
-See src/index.coffee for full documentation.
+See src/slingbot.coffee for full documentation.
 
 ### Installation
 In hubot project repo, run:
