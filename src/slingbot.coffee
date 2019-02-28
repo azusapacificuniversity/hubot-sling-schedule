@@ -59,11 +59,11 @@ module.exports = (robot) ->
                         current_shifts = []
                         for shift in todays_shifts
                             # format strings to objects for easier comparisons
-                            shift.dtstart = new Date(shift.dtstart)
-                            shift.dtend = new Date(shift.dtend)
+                            start_comparison = new Date(shift.dtstart)
+                            end_comparison = new Date(shift.dtend)
 
                             # if the shift is happening right now
-                            if now >= shift.dtstart && now < shift.dtend
+                            if now >= start_comparison && now < end_comparison
                                 current_shifts.push(shift)
                         
                         for shift in current_shifts
@@ -80,10 +80,16 @@ module.exports = (robot) ->
                                 hour: 'numeric',
                                 minute: 'numeric',
                                 hour12: true }
-                            start_formatted = shift.dtstart.toLocaleString('en-US', options)
-                            end_formatted = shift.dtend.toLocaleString('en-US', options)
                             
-                            summary += start_formatted.toString() + " – " + end_formatted.toString() + "\n\n"
+                            s = shift.dtstart.split(/\D/)
+                            start_formatted = new Date(Date.UTC(+s[0], --s[1], +s[2], +s[3], +s[4], +s[5], 0))
+                            start_formatted = start_formatted.toLocaleString('en-US', options).toString()
+
+                            e = shift.dtend.split(/\D/)
+                            end_formatted = new Date(Date.UTC(+e[0], --e[1], +e[2], +e[3], +e[4], +e[5], 0))
+                            end_formatted = end_formatted.toLocaleString('en-US', options).toString()
+
+                            summary += start_formatted + " – " + end_formatted + "\n\n"
                             output += summary
 
                         res.reply output
