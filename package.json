@@ -1,6 +1,6 @@
 {
   "name": "hubot-sling-schedule",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "mattaniaha <maytenfsu14@apu.edu>",
   "description": "Allows hubot to pull scheduling information from Sling",
   "keywords": [
