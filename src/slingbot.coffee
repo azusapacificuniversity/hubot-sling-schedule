@@ -12,13 +12,43 @@
 # Commands:
 #     hubot who's here - returns list of employees who are currently working with shift times and summary
 
-SLING_AUTH_TOKEN = process.env.SLING_AUTH_TOKEN or false
+SLING_TOKEN = process.env.SLING_AUTH_TOKEN or false
+SLACK_TOKEN = process.env.HUBOT_SLACK_TOKEN or false
 
 module.exports = (robot) ->
 
+    robot.respond /clock in/i, (res) ->        
+        if SLACK_TOKEN == false
+            res.reply "Oops! Looks like you haven't set a Slack authentication token as an enviromental variable"
+            return
+
+        user_mentions = (mention for mention in res.message.mentions when mention.type is "user")
+
+        if user_mentions > 0
+            response_text = ""
+
+        # get all user data from sling
+        robot.http("https://api.sling.is/v1/users")
+            .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
+            .get() (err, response, body) ->
+                if err 
+                    console.log('Slack API users query failed: ')
+                    console.log(err)
+                    return
+
+                slack_users = JSON.parse body
+                slack_users = slack_users.members
+
+                employee_data = slack_users.filter( (user) ->
+                    return user.id == id )
+                
+                employee_email = employee_data.profile.email
+
+
+
     robot.respond /(who[']s here)/i, (res) ->        
 
-        if SLING_AUTH_TOKEN == false
+        if SLING_TOKEN == false
             res.reply "Oops! Looks like you haven't set a Sling authentication token as an enviromental variable \n" +
                        "More info on how to get an authentication token can be found here: https://api.sling.is/"
             return
@@ -27,7 +57,7 @@ module.exports = (robot) ->
         
         # get all user data from sling
         robot.http("https://api.sling.is/v1/users")
-            .headers('Accept': 'application/json', 'Authorization': SLING_AUTH_TOKEN)
+            .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
             .get() (err, response, body) ->
                 if err 
                     console.log('Sling API users query failed: ')
@@ -47,7 +77,7 @@ module.exports = (robot) ->
                 now_ISOformat = now.getFullYear() + '-' + now_month + '-' + now_date
 
                 robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_ISOformat}")
-                    .headers('Accept': 'application/json', 'Authorization': SLING_AUTH_TOKEN)
+                    .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
                     .get() (err, response, body) ->
                         if err 
                             console.log('Sling API timesheet query failed: ')
