@@ -81,6 +81,11 @@ module.exports = (robot) ->
                                 tagged_users_shifts = all_shifts.filter( (shift) ->
                                     return shift.user.id == shift_owner.id)
 
+                                if tagged_users_shifts.length == 0
+                                    res.reply "This employee doesn't have any scheduled shifts today"
+                                    return
+
+
 
 
 
