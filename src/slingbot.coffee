@@ -27,6 +27,11 @@ module.exports = (robot) ->
         if user_mentions > 0
             response_text = ""
 
+        # get the tagged user's slack id
+        tagged_uid = ""
+        for { id } in user_mentions
+            tagged_uid = id
+
         # get user data from slack
         robot.http("https://slack.com/api/users.list?token=#{SLACK_TOKEN}&pretty=1")
             .headers('Accept': 'application/json')
@@ -39,10 +44,8 @@ module.exports = (robot) ->
                 slack_users = JSON.parse body
                 slack_users = slack_users.members
 
-                employee_data = slack_users.filter( (user) ->
-                    return user.id == id )
-                
-                employee_email = employee_data.profile.email
+                tagged_email = slack_users.filter( (user) ->
+                    return user.id == tagged_uid )[0].profile.email
 
 
 
