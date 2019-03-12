@@ -27,9 +27,9 @@ module.exports = (robot) ->
         if user_mentions > 0
             response_text = ""
 
-        # get all user data from sling
-        robot.http("https://api.sling.is/v1/users")
-            .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
+        # get user data from slack
+        robot.http("https://slack.com/api/users.list?token=#{SLACK_TOKEN}&pretty=1")
+            .headers('Accept': 'application/json')
             .get() (err, response, body) ->
                 if err 
                     console.log('Slack API users query failed: ')
