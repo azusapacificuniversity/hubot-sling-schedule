@@ -48,6 +48,41 @@ module.exports = (robot) ->
                     return user.id == tagged_uid )[0].profile.email
 
 
+                # get user data from sling
+                robot.http("https://api.sling.is/v1/users")
+                    .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
+                    .get() (err, response, body) ->
+                        if err 
+                            console.log('Sling API users query failed: ')
+                            console.log(err)
+                            return
+                        
+                        sling_users = JSON.parse body
+
+                        shift_owner = sling_users.filter( (user) ->
+                            return user.email == slack_tagged_email)[0]
+
+                        now = new Date
+                        pad = (n) -> if n < 10 then return '0' + n else return n
+                        now_month = pad(now.getMonth() + 1)
+                        now_date = pad(now.getDate())
+                        now_ISOformat = now.getFullYear() + '-' + now_month + '-' + now_date
+
+                        robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_ISOformat}")
+                            .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
+                            .get() (err, response, body) ->
+                                if err 
+                                    console.log('Sling API timesheet query failed: ')
+                                    console.log(err)
+                                    return
+                                
+                                all_shifts = JSON.parse body
+
+                                tagged_users_shifts = all_shifts.filter( (shift) ->
+                                    return shift.user.id == shift_owner.id)
+
+
+
 
     robot.respond /(who[']s here)/i, (res) ->        
 
