@@ -54,6 +54,9 @@ module.exports = (robot) ->
                             console.log(err)
                             return
                         
+                        if body.includes("Feature available only in Sling Premium")
+                            output = "Whoops! This feature is only available in Sling Premium"
+
                         todays_shifts = JSON.parse body
                         
                         current_shifts = []
