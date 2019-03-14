@@ -81,8 +81,15 @@ module.exports = (robot) ->
                                 tagged_users_shifts = all_shifts.filter( (shift) ->
                                     return shift.user.id == shift_owner.id)
 
-                                if tagged_users_shifts.length == 0
-                                    res.reply "This employee doesn't have any scheduled shifts today"
+                                if tagged_users_shifts.length > 0
+                                    for shift in tagged_users_shifts
+                                        start_comparison = new Date(shift.dtstart)
+                                        end_comparison = new Date(shift.dtend)
+
+                                        if now >= start_comparison && now < end_comparison
+                                            clockable_shifts.push(shift)
+                                else
+                                    response_text = "This employee doesn't have any scheduled shifts today"
                                     return
 
 
