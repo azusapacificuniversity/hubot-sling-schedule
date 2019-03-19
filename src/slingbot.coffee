@@ -93,7 +93,7 @@ module.exports = (robot) ->
                                     if clockable_shift.length > 0
                                         # ahh go crazy ahhh go stupid
                                     else
-                                        res.send "This employee cannot be clocked into their shift"
+                                        res.send "This employee cannot be clocked into their shift at the moment. Double check your start time!"
                                         return
                                 else
                                     response_text = "This employee doesn't have any scheduled shifts today"
