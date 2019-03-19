@@ -81,6 +81,7 @@ module.exports = (robot) ->
                                 tagged_users_shifts = all_shifts.filter( (shift) ->
                                     return shift.user.id == shift_owner.id)
 
+                                clockable_shifts = []
                                 if tagged_users_shifts.length > 0
                                     for shift in tagged_users_shifts
                                         start_comparison = new Date(shift.dtstart)
@@ -88,6 +89,12 @@ module.exports = (robot) ->
 
                                         if now >= start_comparison && now < end_comparison
                                             clockable_shifts.push(shift)
+
+                                    if clockable_shift.length > 0
+                                        # ahh go crazy ahhh go stupid
+                                    else
+                                        res.send "This employee cannot be clocked into their shift"
+                                        return
                                 else
                                     response_text = "This employee doesn't have any scheduled shifts today"
                                     return
