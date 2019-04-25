@@ -17,92 +17,6 @@ SLACK_TOKEN = process.env.HUBOT_SLACK_TOKEN or false
 
 module.exports = (robot) ->
 
-    robot.respond /clock in/i, (res) ->        
-        if SLACK_TOKEN == false
-            res.reply "Oops! Looks like you haven't set a Slack authentication token as an enviromental variable"
-            return
-
-        user_mentions = (mention for mention in res.message.mentions when mention.type is "user")
-
-        if user_mentions > 0
-            response_text = ""
-
-        # get the tagged user's slack id
-        tagged_uid = ""
-        for { id } in user_mentions
-            tagged_uid = id
-
-        # get user data from slack
-        robot.http("https://slack.com/api/users.list?token=#{SLACK_TOKEN}&pretty=1")
-            .headers('Accept': 'application/json')
-            .get() (err, response, body) ->
-                if err 
-                    console.log('Slack API users query failed: ')
-                    console.log(err)
-                    return
-
-                slack_users = JSON.parse body
-                slack_users = slack_users.members
-
-                tagged_email = slack_users.filter( (user) ->
-                    return user.id == tagged_uid )[0].profile.email
-
-
-                # get user data from sling
-                robot.http("https://api.sling.is/v1/users")
-                    .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
-                    .get() (err, response, body) ->
-                        if err 
-                            console.log('Sling API users query failed: ')
-                            console.log(err)
-                            return
-                        
-                        sling_users = JSON.parse body
-
-                        shift_owner = sling_users.filter( (user) ->
-                            return user.email == slack_tagged_email)[0]
-
-                        now = new Date
-                        pad = (n) -> if n < 10 then return '0' + n else return n
-                        now_month = pad(now.getMonth() + 1)
-                        now_date = pad(now.getDate())
-                        now_ISOformat = now.getFullYear() + '-' + now_month + '-' + now_date
-
-                        robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_ISOformat}")
-                            .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
-                            .get() (err, response, body) ->
-                                if err 
-                                    console.log('Sling API timesheet query failed: ')
-                                    console.log(err)
-                                    return
-                                
-                                all_shifts = JSON.parse body
-
-                                tagged_users_shifts = all_shifts.filter( (shift) ->
-                                    return shift.user.id == shift_owner.id)
-
-                                clockable_shifts = []
-                                if tagged_users_shifts.length > 0
-                                    for shift in tagged_users_shifts
-                                        start_comparison = new Date(shift.dtstart)
-                                        end_comparison = new Date(shift.dtend)
-
-                                        if now >= start_comparison && now < end_comparison
-                                            clockable_shifts.push(shift)
-
-                                    if clockable_shift.length > 0
-                                        # ahh go crazy ahhh go stupid
-                                    else
-                                        res.send "This employee cannot be clocked into their shift at the moment. Double check your start time!"
-                                        return
-                                else
-                                    response_text = "This employee doesn't have any scheduled shifts today"
-                                    return
-
-
-
-
-
     robot.respond /(who[']s here)/i, (res) ->        
 
         if SLING_TOKEN == false
@@ -180,3 +94,97 @@ module.exports = (robot) ->
                             output += summary
 
                         res.reply output
+
+    
+    # TODO: restrict this command using HUBOT AUTH so a tech can only clock themselves in
+    # and managers/staff should be able to clock in whoever they want
+    robot.respond /clock in/i, (res) ->        
+        if SLACK_TOKEN == false
+            res.reply "Oops! Looks like you haven't set a Slack authentication token as an enviromental variable"
+            return
+
+        # grabs info about the tagged people
+        user_mentions = (mention for mention in res.message.mentions when mention.type is "user")
+
+        if user_mentions > 0
+            response_text = ""
+
+        # get the tagged user's slack id
+        tagged_uid = ""
+        for { id } in user_mentions
+            tagged_uid = id
+
+        # get user data from slack
+        # (we do this to get the tagged user's netID)
+        robot.http("https://slack.com/api/users.list?token=#{SLACK_TOKEN}&pretty=1")
+            .headers('Accept': 'application/json')
+            .get() (err, response, body) ->
+                if err 
+                    console.log('Slack API users query failed: ')
+                    console.log(err)
+                    return
+
+                slack_users = JSON.parse body
+                slack_users = slack_users.members
+
+                tagged_email = slack_users.filter( (user) ->
+                    return user.id == tagged_uid )[0].profile.email
+
+
+                # get user data from sling
+                robot.http("https://api.sling.is/v1/users")
+                    .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
+                    .get() (err, response, body) ->
+                        if err 
+                            console.log('Sling API users query failed: ')
+                            console.log(err)
+                            return
+                        
+                        sling_users = JSON.parse body
+
+                        # find tagged user's sling info via filtering by their slack email
+                        shift_owner = sling_users.filter( (user) ->
+                            return user.email == slack_tagged_email)[0]
+
+                        now = new Date
+                        # some date formatting to make it ISO8061 compatible
+                        pad = (n) -> if n < 10 then return '0' + n else return n
+                        now_month = pad(now.getMonth() + 1)
+                        now_date = pad(now.getDate())
+                        now_ISOformat = now.getFullYear() + '-' + now_month + '-' + now_date
+
+                        # gets all the shifts happening today
+                        robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_ISOformat}")
+                            .headers('Accept': 'application/json', 'Authorization': SLING_TOKEN)
+                            .get() (err, response, body) ->
+                                if err 
+                                    console.log('Sling API timesheet query failed: ')
+                                    console.log(err)
+                                    return
+                                
+                                all_shifts = JSON.parse body
+
+                                # filter through today's shifts to only get the tagged user's shifts today 
+                                tagged_users_shifts = all_shifts.filter( (shift) ->
+                                    return shift.user.id == shift_owner.id)
+
+                                clockable_shifts = []
+                                if tagged_users_shifts.length > 0
+                                    for shift in tagged_users_shifts
+                                        # converting strings to objects for easier time comparisons
+                                        start_comparison = new Date(shift.dtstart)
+                                        end_comparison = new Date(shift.dtend)
+
+                                        # find the shifts that are happening right now
+                                        if now >= start_comparison && now < end_comparison
+                                            clockable_shifts.push(shift)
+
+                                    if clockable_shifts.length > 0
+                                        for cl_shift in clockable_shifts
+                                            # TODO clock into shift using PUT /timesheet/{timesheet_id}
+                                    else
+                                        res.send "This employee cannot be clocked into their shift at the moment. Double check your start time!"
+                                        return
+                                else
+                                    response_text = "This employee doesn't have any scheduled shifts today"
+                                    return
