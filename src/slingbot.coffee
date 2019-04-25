@@ -46,6 +46,7 @@ module.exports = (robot) ->
                 now_date = pad(now.getDate())
                 now_ISOformat = now.getFullYear() + '-' + now_month + '-' + now_date
 
+                # get all the shifts happening today
                 robot.http("https://api.sling.is/v1/reports/timesheets?dates=#{now_ISOformat}")
                     .headers('Accept': 'application/json', 'Authorization': SLING_AUTH_TOKEN)
                     .get() (err, response, body) ->
@@ -70,12 +71,13 @@ module.exports = (robot) ->
                                 current_shifts.push(shift)
                         
                         for shift in current_shifts
-                            # filters through all users json and finds the shift owner details via user_id
-                            # func filter() returns a list with 1 element, so we grab first element
+                            # filters through list of users and finds the shift owner details via user_id
+                            # func filter() returns a list with 1 element, so we grab the first element "[0]"
                             shift_owner = user_list.filter( (user) -> 
                                 return user.id == shift.user.id  
                             )[0]      
 
+                            # adds full name and summary (aka location of shift)
                             summary = shift_owner.name.toString()  + " " + shift_owner.lastname.toString() + ": " + shift.summary.toString() + "\n"
 
                             # make timestamp easier to read with AM/PM formatting
@@ -84,6 +86,7 @@ module.exports = (robot) ->
                                 minute: 'numeric',
                                 hour12: true }
                             
+                            # more date formatting to make it readable to the user bc javascript is weird
                             s = shift.dtstart.split(/\D/)
                             start_formatted = new Date(Date.UTC(+s[0], --s[1], +s[2], +s[3], +s[4], +s[5], 0))
                             start_formatted = start_formatted.toLocaleString('en-US', options).toString()
